@@ -46,8 +46,8 @@ export const bookSchema = z.object({
   name: z.string().min(1, 'Nama buku harus diisi'),
   category: z.string().min(1, 'Kategori harus diisi'),
   publisher: z.string().min(1, 'Penerbit harus diisi'),
-  isbn: z.string().length(13, 'ISBN harus 13 digit'),
-  issn: z.string().length(9, 'ISSN harus 9 digit'),
+  isbn: z.string().min(5, 'ISBN harus 5 digit minimal'),
+  issn: z.string().min(5, 'ISSN harus 5 digit minimal'),
   author: z.string().min(1, 'Pembuat harus diisi'),
   year: z.number().int().min(1900, 'Tahun tidak valid'),
   price: z.number().min(0, 'Harga tidak valid'),
@@ -63,6 +63,18 @@ export const updateBookSchema = addNewBookSchema.partial();
 export const booksRoute = new Hono()
   .get('/', (c) => {
     return c.json({ books: fakeBooks }, 200)
+  })
+  .get('/:id{[0-9]+}', (c) => {
+    const id = parseInt(c.req.param('id'));
+
+    // Cari buku berdasarkan ID
+    const book = fakeBooks.find((data) => data.id === id);
+    if (!book) {
+      return c.json({ message: "Buku tidak ditemukan" }, 404)
+    }
+
+    // Kembalikan data buku
+    return c.json({ book });
   })
   .post('/', zValidator("json", addNewBookSchema), async (c) => {
 
@@ -97,7 +109,7 @@ export const booksRoute = new Hono()
     return c.json({ book: fakeBooks[bookIndex] }, 200);
 
   })
-  .delete('/:id', async (c) => {
+  .delete('/:id{[0-9]+}', async (c) => {
     const id = Number.parseInt(c.req.param('id'));
 
     if (isNaN(id)) {

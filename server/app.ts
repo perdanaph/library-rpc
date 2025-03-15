@@ -7,10 +7,11 @@ const app = new Hono()
 
 app.use("*", logger());
 
-app.get('/', (c) => {
-  return c.text('Hello Hono!')
-})
 
-app.route("/api/books", booksRoute)
+const apiRoutes = app.basePath('/api').route("/books", booksRoute);
+
+app.use('*', serveStatic({ root: './frontend/dist' }));
+app.use('*', serveStatic({ root: './frontend/dist/index.html' }));
 
 export default app
+export type ApiRoutes = typeof apiRoutes
