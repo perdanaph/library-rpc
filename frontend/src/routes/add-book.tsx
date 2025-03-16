@@ -23,8 +23,8 @@ export default function CreateBook() {
       isbn: '',
       issn: '',
       author: '',
-      year: 0,
-      price: 0,
+      year: '',
+      price: '',
       description: '',
     },
     onSubmit: async ({ value }) => {
@@ -221,10 +221,9 @@ export default function CreateBook() {
               <Input
                 id={field.name}
                 name={field.name}
-                type='number'
                 value={field.state.value}
                 onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(parseInt(e.target.value))}
+                onChange={(e) => field.handleChange(e.target.value)}
               />
             </div>
           )}
@@ -247,7 +246,7 @@ export default function CreateBook() {
                 type='number'
                 value={field.state.value}
                 onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(parseFloat(e.target.value))}
+                onChange={(e) => field.handleChange(e.target.value)}
               />
             </div>
           )}

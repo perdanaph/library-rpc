@@ -1,45 +1,9 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from 'zod'
-
-const fakeBooks: Book[] = [
-  {
-    id: 1,
-    name: 'Belajar TypeScript',
-    category: 'Pemrograman',
-    publisher: 'Penerbit A',
-    isbn: '1234567890123',
-    issn: '1234-5678',
-    author: 'John Doe',
-    year: 2023,
-    price: 150000,
-    description: 'Buku ini membahas dasar-dasar TypeScript.',
-  },
-  {
-    id: 2,
-    name: 'ReactJS untuk Pemula',
-    category: 'Pemrograman',
-    publisher: 'Penerbit B',
-    isbn: '9876543210987',
-    issn: '8765-4321',
-    author: 'Jane Smith',
-    year: 2022,
-    price: 200000,
-    description: 'Panduan lengkap untuk memulai belajar ReactJS.',
-  },
-  {
-    id: 3,
-    name: 'Node.js Advanced',
-    category: 'Pemrograman',
-    publisher: 'Penerbit C',
-    isbn: '4567890123456',
-    issn: '5678-1234',
-    author: 'Alice Johnson',
-    year: 2021,
-    price: 250000,
-    description: 'Buku ini membahas konsep lanjutan Node.js.',
-  },
-];
+import { db } from "../db";
+import { books } from "../db/schema/books";
+import { eq } from 'drizzle-orm';
 
 export const bookSchema = z.object({
   id: z.number().int().positive().min(1),
@@ -49,8 +13,8 @@ export const bookSchema = z.object({
   isbn: z.string().min(5, 'ISBN harus 5 digit minimal'),
   issn: z.string().min(5, 'ISSN harus 5 digit minimal'),
   author: z.string().min(1, 'Pembuat harus diisi'),
-  year: z.number().int().min(1900, 'Tahun tidak valid'),
-  price: z.number().min(0, 'Harga tidak valid'),
+  year: z.string().min(4, 'Tahun tidak valid'),
+  price: z.string().min(0, 'Harga tidak valid'),
   description: z.string().optional(),
 });
 
@@ -61,27 +25,26 @@ const addNewBookSchema = bookSchema.omit({ id: true })
 export const updateBookSchema = addNewBookSchema.partial();
 
 export const booksRoute = new Hono()
-  .get('/', (c) => {
-    return c.json({ books: fakeBooks }, 200)
+  .get('/', async (c) => {
+    const data = await db.select().from(books);
+    return c.json({ books: data }, 200)
   })
-  .get('/:id{[0-9]+}', (c) => {
-    const id = parseInt(c.req.param('id'));
+  .get('/:id{[0-9]+}', async (c) => {
+    const id = Number.parseInt(c.req.param('id'));
 
-    // Cari buku berdasarkan ID
-    const book = fakeBooks.find((data) => data.id === id);
+    const book = await db.select().from(books).where(eq(books.id, id))
     if (!book) {
       return c.json({ message: "Buku tidak ditemukan" }, 404)
     }
-
-    // Kembalikan data buku
     return c.json({ book });
   })
   .post('/', zValidator("json", addNewBookSchema), async (c) => {
-
     try {
       const book = await c.req.valid("json")
-      fakeBooks.push({ ...book, id: fakeBooks.length + 1 })
-      return c.json(book, 201)
+      const result = await db.insert(books).values({
+        ...book,
+      }).returning()
+      return c.json(result, 201)
 
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -92,21 +55,27 @@ export const booksRoute = new Hono()
     }
   })
   .put('/:id{[0-9]+}', zValidator('json', updateBookSchema), async (c) => {
-    const id = parseInt(c.req.param('id'))
+    const id = Number.parseInt(c.req.param('id'))
     const updateBook = await c.req.valid('json')
 
-    const bookIndex = fakeBooks.findIndex((book) => book.id === id);
-    if (!bookIndex) {
+    const book = await db.select().from(books).where(eq(books.id, id))
+    if (!book) {
       return c.json({ message: "Buku tidak ditemukan" }, 404)
     }
 
-    if (bookIndex === -1) {
-      return c.json({ error: 'Buku tidak ditemukan' }, 404);
-    }
+    const result = await db.update(books).set({
+      name: updateBook.name,
+      category: updateBook.category,
+      publisher: updateBook.publisher,
+      isbn: updateBook.isbn,
+      issn: updateBook.issn,
+      author: updateBook.author,
+      year: updateBook.year,
+      price: updateBook.price,
+      description: updateBook.description
+    }).where(eq(books.id, id)).returning()
 
-    fakeBooks[bookIndex] = { ...fakeBooks[bookIndex], ...updateBook };
-
-    return c.json({ book: fakeBooks[bookIndex] }, 200);
+    return c.json({ book: result }, 200);
 
   })
   .delete('/:id{[0-9]+}', async (c) => {
@@ -116,13 +85,11 @@ export const booksRoute = new Hono()
       return c.json({ error: 'ID tidak valid' }, 400);
     }
 
-    const bookIndex = fakeBooks.findIndex((book) => book.id === id);
+    const book = await db.delete(books).where(eq(books.id, id));
 
-    if (bookIndex === -1) {
+    if (!book) {
       return c.json({ error: 'Buku tidak ditemukan' }, 404);
     }
-
-    fakeBooks.splice(bookIndex, 1);
 
     return c.json({ message: "Buku berhasil di hapus" });
   });
