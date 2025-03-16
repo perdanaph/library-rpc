@@ -27,7 +27,7 @@ type Book = {
   description?: string;
 };
 type BooksResponse = {
-  books: Book[]; // books adalah array dari Book
+  books: Book[];
 };
 
 const deleteBook = async (id: string) => {

@@ -59,25 +59,34 @@ export const booksRoute = new Hono()
   .put('/:id{[0-9]+}', zValidator('json', updateBookSchema), async (c) => {
     const id = Number.parseInt(c.req.param('id'))
     const updateBook = await c.req.valid('json')
+    try {
 
-    const book = await db.select().from(books).where(eq(books.id, id))
-    if (!book) {
-      return c.json({ message: "Buku tidak ditemukan" }, 404)
+      const book = await db.select().from(books).where(eq(books.id, id))
+      if (!book) {
+        return c.json({ message: "Buku tidak ditemukan" }, 404)
+      }
+
+      const result = await db.update(books).set({
+        name: updateBook.name,
+        category: updateBook.category,
+        publisher: updateBook.publisher,
+        isbn: updateBook.isbn,
+        issn: updateBook.issn,
+        author: updateBook.author,
+        year: updateBook.year,
+        price: updateBook.price,
+        description: updateBook.description
+      }).where(eq(books.id, id)).returning()
+
+      return c.json({ book: result }, 200);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return c.json({ error: error.issues[0].message }, 400);
+      }
+
+      return c.json({ error: 'Internal Server Error' }, 500);
     }
 
-    const result = await db.update(books).set({
-      name: updateBook.name,
-      category: updateBook.category,
-      publisher: updateBook.publisher,
-      isbn: updateBook.isbn,
-      issn: updateBook.issn,
-      author: updateBook.author,
-      year: updateBook.year,
-      price: updateBook.price,
-      description: updateBook.description
-    }).where(eq(books.id, id)).returning()
-
-    return c.json({ book: result }, 200);
 
   })
   .delete('/:id{[0-9]+}', async (c) => {
