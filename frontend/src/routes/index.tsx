@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import CardBook from '.././components/card/index-book';
-
 import { useQuery } from '@tanstack/react-query';
-
 import { api } from '.././lib/services';
+import Search from '@/components/input-search';
+import { useState } from 'react';
 
 export const Route = createFileRoute('/')({
   component: Home,
@@ -20,18 +20,33 @@ async function getAllBooks() {
 }
 
 function Home() {
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
   const { isPending, error, data } = useQuery({
     queryKey: ['get-all-books'],
     queryFn: getAllBooks,
   });
+
+  const filteredBooks = data?.books.filter(
+    (book) =>
+      book.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      book.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      book.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (error) return 'An error: ' + error.message;
 
   return (
     <>
-      <main className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 p-4 mt-10 mx-3'>
+      <Search
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
+
+      <main className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 p-4 mt-6 mx-3'>
         {isPending
           ? 'loading...'
-          : data?.books.map((item) => (
+          : filteredBooks?.map((item) => (
               <CardBook
                 name={item.name}
                 description={item.description || undefined}

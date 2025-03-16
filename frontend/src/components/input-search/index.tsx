@@ -2,13 +2,23 @@ import { Input } from '@/components/ui/input';
 import { SVGProps } from 'react';
 import { JSX } from 'react/jsx-runtime';
 
-export default function Search() {
+interface SearchBarProps {
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+}
+
+export default function Search({
+  searchQuery,
+  onSearchChange,
+}: SearchBarProps) {
   return (
-    <div className='flex w-full max-w-sm items-center border border-gray-300 rounded-lg pl-2.5 py-0'>
+    <div className='flex w-full max-w-lg mx-auto mt-16 items-center border border-gray-300 rounded-lg pl-2.5 py-0'>
       <SearchIcon className='h-4 w-4 mr-2.5' />
       <Input
         type='search'
+        value={searchQuery}
         placeholder='Search...'
+        onChange={(e) => onSearchChange(e.target.value)}
         className='w-full border-0'
       />
     </div>
