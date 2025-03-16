@@ -22,8 +22,8 @@ type Book = {
   isbn: string;
   issn: string;
   author: string;
-  year: number;
-  price: number;
+  year: string;
+  price: string;
   description?: string;
 };
 type BooksResponse = {

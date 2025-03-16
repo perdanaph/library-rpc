@@ -1,7 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { api } from '@/lib/services';
 import { useQuery } from '@tanstack/react-query';
-import { useForm, FormProvider } from '@tanstack/react-form';
+import { useForm } from '@tanstack/react-form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,8 @@ async function getBookById({ id }: { id: string }) {
 
 function UpdateBook() {
   const { bookId } = Route.useParams();
-  const { isPending, error, data } = useQuery({
+  const navigate = useNavigate();
+  const { error, data } = useQuery({
     queryKey: ['get-books', bookId],
     queryFn: () => getBookById({ id: bookId }),
   });
@@ -43,40 +44,22 @@ function UpdateBook() {
       description: data?.book[0].description || '',
     },
     onSubmit: async ({ value }) => {
-      // Set loading state
-      // queryClient.setQueryData(loadingUpdateBookQueryOptions.queryKey, {
-      //   book: value,
-      // });
-      await api.books[':id{[0-9]+}'].$put({
-        json: value,
-        param: { id: bookId },
-      });
+      try {
+        await api.books[':id{[0-9]+}'].$put({
+          json: value,
+          param: { id: bookId },
+        });
 
-      console.log(value);
+        toast('Buku Berhasil Diperbarui', {
+          description: `Buku berhasil diperbarui.`,
+        });
 
-      // try {
-      //   // Kirim data yang diperbarui ke backend
-      //   const updatedBook = await updateBook(id, { value });
-
-      //   // Update cache di frontend
-      //   queryClient.setQueryData(['book', id], updatedBook);
-
-      //   // Tampilkan notifikasi sukses
-      //   toast('Buku Berhasil Diperbarui', {
-      //     description: `Buku "${updatedBook.name}" berhasil diperbarui.`,
-      //   });
-
-      //   // Redirect ke halaman utama
-      //   navigate({ to: '/' });
-      // } catch (error) {
-      //   // Tampilkan notifikasi error
-      //   toast('Error', {
-      //     description: 'Gagal memperbarui buku.',
-      //   });
-      // } finally {
-      //   // Hapus loading state
-      //   queryClient.setQueryData(loadingUpdateBookQueryOptions.queryKey, {});
-      // }
+        navigate({ to: '/' });
+      } catch (error) {
+        toast('Error', {
+          description: 'Gagal memperbarui buku.',
+        });
+      }
     },
   });
   if (error) return 'An error: ' + error.message;
@@ -303,7 +286,7 @@ function UpdateBook() {
               type='submit'
               disabled={!canSubmit}
             >
-              {isSubmitting ? 'Menyimpan...' : 'Tambah Buku'}
+              {isSubmitting ? 'Merubah...' : 'Ubah Buku'}
             </Button>
           )}
         />

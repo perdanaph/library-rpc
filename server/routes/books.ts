@@ -41,9 +41,11 @@ export const booksRoute = new Hono()
   .post('/', zValidator("json", addNewBookSchema), async (c) => {
     try {
       const book = await c.req.valid("json")
+      console.log(book)
       const result = await db.insert(books).values({
         ...book,
-      }).returning()
+      }).returning().then((res) => res[0]);
+      console.log("first")
       return c.json(result, 201)
 
     } catch (error) {

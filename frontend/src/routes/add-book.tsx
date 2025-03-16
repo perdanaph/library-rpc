@@ -5,16 +5,13 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useForm } from '@tanstack/react-form';
 import { api } from '@/lib/services';
-import { useQueryClient } from '@tanstack/react-query';
 
 export const Route = createFileRoute('/add-book')({
   component: CreateBook,
 });
 
 export default function CreateBook() {
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
-
   const form = useForm({
     defaultValues: {
       name: '',
@@ -28,37 +25,14 @@ export default function CreateBook() {
       description: '',
     },
     onSubmit: async ({ value }) => {
-      await new Promise((r) => setTimeout(r, 2000));
-
-      await api.books.$post({ json: value });
-      console.log(value);
-      // const existingBooks = await queryClient.ensureQueryData(getAllBooksQueryOptions);
-
-      // navigate({ to: '/' });
-
-      // Set loading state
-      // queryClient.setQueryData(loadingCreateBookQueryOptions.queryKey, {
-      //   book: value,
-      // });
-
-      // try {
-      //   const newBook = await createBook({ value });
-
-      //   queryClient.setQueryData(getAllBooksQueryOptions.queryKey, {
-      //     ...existingBooks,
-      //     books: [newBook, ...existingBooks.books],
-      //   });
-
-      //   toast('Buku Berhasil Ditambahkan', {
-      //     description: `Buku "${newBook.name}" berhasil ditambahkan.`,
-      //   });
-      // } catch (error) {
-      //   toast('Error', {
-      //     description: 'Gagal menambahkan buku baru.',
-      //   });
-      // } finally {
-      //   queryClient.setQueryData(loadingCreateBookQueryOptions.queryKey, {});
-      // }
+      try {
+        await api.books.$post({ json: value });
+        toast.success('Buku Berhasil Ditambahkan');
+        navigate({ to: '/' });
+      } catch (error) {
+        toast.error('Gagal menambahkan buku');
+        console.error('Error:', error);
+      }
     },
   });
 

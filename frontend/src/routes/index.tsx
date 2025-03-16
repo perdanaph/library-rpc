@@ -34,7 +34,7 @@ function Home() {
           : data?.books.map((item) => (
               <CardBook
                 name={item.name}
-                description={item.description}
+                description={item.description || undefined}
                 category={item.category}
                 publisher={item.publisher}
                 author={item.author}
